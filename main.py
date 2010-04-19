@@ -35,13 +35,19 @@ from django.utils import simplejson
 import datetime
 import time
 import base64
+from django.utils import simplejson
 
-
-API_KEY = "" # For use with bit.ly, or some other url shortener
+# For use with tskr.us, this is the public api key
+# To get your own to track stats goto http://tskr.us 
+# Sign up
+# On your user stats page there is an api key listed
+API_KEY = "b234004abb5f0d8753637ad6dd914e2100d69a15" 
 SOURCE = "a social to twitter condenser" 
 TWITTER_USERNAME = "" # you username on twitter 
 TWITTER_PASSWORD = "" # Your password on twitter
 GOOGLE_READER_USERNAME = ""# for sussing out if you posted a comment or not
+
+SHORTEN_URLS = True
 
 def postToTwitter(tweet):
     login = TWITTER_USERNAME
@@ -132,8 +138,8 @@ class SubscribeHandler(webapp.RequestHandler):
             e = Entry(key_name=entry_id, data=data)
             e.put()
             link = entry["link"]
-            """
-            if link.find("tskr.us") == -1:
+            
+            if SHORTEN_URLS:
                 form_fields = {
                   "api_key": API_KEY,
                   "url": link
@@ -141,9 +147,13 @@ class SubscribeHandler(webapp.RequestHandler):
                 form_data = urllib.urlencode(form_fields)
                 # Link should get shorten
                 fetch_url = "http://tskr.us/api/v1/shorten";
-                url = urlfetch.fetch(url,payload=form_data)
-                link = "http://tskr.us/VV"
-            """
+                try:
+                    result = urlfetch.fetch(url,payload=form_data,method=urlfetch.POST,deadline=10)
+                    if result.status_code == 200:
+                        link = json.loads(result.content)
+                except:
+                    pass
+            
             tweet = link
             try:
                 if entry["author"] == GOOGLE_READER_USERNAME:
